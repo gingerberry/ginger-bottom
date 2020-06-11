@@ -2,6 +2,8 @@
 
 ## GET recent presentations
 
+/ginger/api/v1/recentPresentations
+
 ```javascript
 {
     "presentations": [
@@ -15,6 +17,8 @@
 ```
 
 ## GET presentation
+
+/ginger/api/v1/presentations/{id}
 
 ```javascript
 {
@@ -32,6 +36,8 @@
 ```
 
 ## POST video
+
+/gingerberry/api/v1/presentations/{id}
 
 ```javascript
 // empty return

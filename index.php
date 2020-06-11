@@ -4,8 +4,12 @@ session_start();
 
 require __DIR__ . "/vendor/autoload.php";
 
-use gingerberry\db\DB;
+use gingerberry\api\v1\handler\PresentationHandler;
+use gingerberry\router\Request;
+use gingerberry\router\Router;
 
-$dbConn = DB::getInstance()::getPDO();
+$router = new Router(new Request());
 
-$dbConn = null;
+$pptHandler = new PresentationHandler($router);
+
+$pptHandler->discoverEndpoints();
