@@ -23,6 +23,7 @@ class VideoHandler extends Handler
     public function discoverEndpoints()
     {
         $this->uploadVideoEndpoint();
+        $this->getVideoEndpoint();
     }
 
     private function uploadVideoEndpoint()
@@ -58,6 +59,31 @@ class VideoHandler extends Handler
             $this->updateSlideStamps($_FILES["video"]["tmp_name"], $id);
 
             return \json_encode("");
+        });
+    }
+
+    public function getVideoEndpoint()
+    {
+        $this->router->get("/\/ginger\/api\/v1\/video\/[0-9]+/", function ($request) {
+            $this->setCORSHeaders();
+            $id = basename($_SERVER['REQUEST_URI']);
+            
+            $s3 = new S3Client([
+                'version' => 'latest',
+                'region'  => 'us-east-1'
+            ]);
+
+            $keyname = "presentation/$id/$id.mp4"; 
+
+            $result = $s3->getObject([
+                'Bucket' => 'gingerberry',
+                'Key'    => $keyname
+            ]);
+
+            header("Content-Type: {$result['ContentType']}");
+            header("Content-Disposition: attachment; filename=$id.mp4");
+
+            return $result['Body'];
         });
     }
 
