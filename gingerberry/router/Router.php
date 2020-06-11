@@ -73,4 +73,8 @@ class Router
     {
         \header("{$this->request->serverProtocol} 404 Not Found");
     }
+
+    public function getRequest() {
+        return $this->request;
+    }
 }
