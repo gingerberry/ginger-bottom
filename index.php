@@ -4,8 +4,8 @@ session_start();
 
 require __DIR__ . "/vendor/autoload.php";
 
-use gingerberry\Test;
+use gingerberry\db\DB;
 
-$test = new Test();
+$dbConn = DB::getInstance()::getPDO();
 
-echo $test->sum();
+$dbConn = null;
