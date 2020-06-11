@@ -9,6 +9,8 @@ use gingerberry\db\DB;
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
+use Zxing\QrReader;
+
 class VideoHandler extends Handler
 {
     private $router;
@@ -37,15 +39,12 @@ class VideoHandler extends Handler
                 return \json_encode("Invalid file format. Expected .mp4 but received $fileType.");
             }
 
-            //move_uploaded_file($_FILES["video"]["tmp_name"], $target_file);
-
             $s3 = new S3Client([
                 'version' => 'latest',
                 'region'  => 'us-east-1'
             ]);
 
             try {
-                // Upload data.
                 $s3->putObject([
                     'Bucket' => "gingerberry",
                     'Key'    => $target_file,
@@ -56,7 +55,77 @@ class VideoHandler extends Handler
                 return $e->getMessage() . PHP_EOL;
             }
 
+            $this->updateSlideStamps($_FILES["video"]["tmp_name"], $id);
+
             return \json_encode("");
         });
+    }
+
+    private function updateSlideStamps($filePath, $presentationID)
+    {
+        $videoStamps = $this->videoStamping($filePath);
+
+        $dbConn = DB::getInstance()::getPDO();
+        $sql = "SELECT id FROM slides WHERE presentation_id = :presentation_id";
+        $stmt = $dbConn->prepare($sql, array(\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY));
+        $stmt->execute(array(':presentation_id' => $presentationID));
+
+        $cnt = 0;
+
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $slideID = $row['id'];
+
+            $sql = "UPDATE slides SET start_sec = :start_sec WHERE presentation_id = :presentation_id AND id = :id";
+            $slideSTMT = $dbConn->prepare($sql, array(\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY));
+            $slideSTMT->execute(array(
+                ':start_sec' => $videoStamps[$cnt],
+                ':presentation_id' => $presentationID,
+                ':id' => $slideID
+            ));
+            $slideSTMT = null;
+
+            $cnt++;
+        }
+
+        $stmt = null;
+    }
+
+    private function videoStamping($filePath)
+    {
+        set_time_limit(500);
+        $frameRate = shell_exec("(ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate $filePath 2> /dev/null | cut -d '/' -f 1)");
+        $frameRate = intval($frameRate);
+
+        $videoLen = shell_exec("ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath 2> /dev/null");
+        $videoLen = intval($videoLen);
+        $frameFilePath = "tmp_frames/";
+
+        $tsArray = array();
+
+        $time = 0;
+        $step = 5;
+
+        $tsArray[0] = 0;
+        $prev = 0;
+        $curr = $prev;
+
+        while ($time + $step < $videoLen) {
+            $time += $step;
+            $frame = $frameRate * $time;
+            $file = $frameFilePath . ($time / $step) . ".png";
+            shell_exec("ffmpeg -i $filePath -vf 'select=eq(n\, $frame)' -vframes 1 $file <<< y");
+
+            $qrcode = new QrReader($file);
+            $curr = intval($qrcode->text());
+
+            if ($curr != $prev) {
+                for ($i = $prev + 1; $i <= $curr; $i++) {
+                    $tsArray[$i] = $time - $step;
+                }
+                $prev = $curr;
+            }
+        }
+
+        return $tsArray;
     }
 }
