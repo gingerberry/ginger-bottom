@@ -26,7 +26,6 @@ class PresentationHandler extends Handler
     {
         $this->registerRecentPresentationsEndpoint();
         $this->registerPresentationEndpoint();
-        $this->getImageEndpoint();
     }
 
     private function registerRecentPresentationsEndpoint()
@@ -88,32 +87,6 @@ class PresentationHandler extends Handler
             $stmt = null;
 
             return \json_encode($ppt);
-        });
-    }
-
-    public function getImageEndpoint()
-    {
-        $this->router->get("/\/ginger\/api\/v1\/presentation_image\/[0-9]+\/slide\/[0-9]+/", function () {
-            $this->setCORSHeaders();
-            $id = explode('/', $_SERVER['REQUEST_URI'])[5];
-            $image = explode('/', $_SERVER['REQUEST_URI'])[7];
-            
-            $s3 = new S3Client([
-                'version' => 'latest',
-                'region'  => 'us-east-1'
-            ]);
-
-            $keyname = "presentation/$id/$image.png"; 
-
-            $result = $s3->getObject([
-                'Bucket' => 'gingerberry',
-                'Key'    => $keyname
-            ]);
-
-            header("Content-Type: {$result['ContentType']}");
-            header("Content-Disposition: attachment; filename=$id.png");
-
-            return $result['Body'];
         });
     }
 }
