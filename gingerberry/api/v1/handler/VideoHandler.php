@@ -28,7 +28,6 @@ class VideoHandler extends Handler
     private function uploadVideoEndpoint()
     {
         $this->router->post("/\/ginger\/api\/v1\/video\/[0-9]+/", function ($request) {
-            $this->setCORSHeaders();
             header("Content-Type: application/json; charset=UTF-8");
 
             $id = basename($_SERVER['REQUEST_URI']);

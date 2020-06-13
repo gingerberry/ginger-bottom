@@ -10,9 +10,6 @@ use gingerberry\api\v1\model\PresentationList;
 use gingerberry\api\v1\model\Slide;
 use gingerberry\db\DB;
 
-use Aws\S3\S3Client;
-use Aws\S3\Exception\S3Exception;
-
 class PresentationHandler extends Handler
 {
     private $router;
@@ -31,7 +28,6 @@ class PresentationHandler extends Handler
     private function registerRecentPresentationsEndpoint()
     {
         $this->router->get("/\/ginger\/api\/v1\/recentPresentations/", function () {
-            $this->setCORSHeaders();
             header("Content-Type: application/json; charset=UTF-8");
 
             $dbConn = DB::getInstance()::getPDO();
@@ -58,7 +54,6 @@ class PresentationHandler extends Handler
     private function registerPresentationEndpoint()
     {
         $this->router->get('/\/ginger\/api\/v1\/presentation\/[0-9]+/', function () {
-            $this->setCORSHeaders();
             header("Content-Type: application/json; charset=UTF-8");
 
             $id = basename($_SERVER['REQUEST_URI']);
