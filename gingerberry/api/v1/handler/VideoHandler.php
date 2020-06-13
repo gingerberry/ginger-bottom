@@ -93,7 +93,7 @@ class VideoHandler extends Handler
 
     private function videoStamping($filePath)
     {
-        set_time_limit(500);
+        set_time_limit(1000);
         $frameRate = shell_exec("(ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate $filePath 2> /dev/null | cut -d '/' -f 1)");
         $frameRate = intval($frameRate);
 
