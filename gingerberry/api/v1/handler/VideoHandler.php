@@ -74,6 +74,9 @@ class VideoHandler extends Handler
 
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $slideID = $row['id'];
+            if (!\array_key_exists($cnt, $videoStamps)) {
+                break;
+            }
 
             $sql = "UPDATE slides SET start_sec = :start_sec WHERE presentation_id = :presentation_id AND id = :id";
             $slideSTMT = $dbConn->prepare($sql, array(\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY));
@@ -98,7 +101,7 @@ class VideoHandler extends Handler
 
         $videoLen = shell_exec("ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath 2> /dev/null");
         $videoLen = intval($videoLen);
-        $frameFilePath = "/tmp/";
+        $frameFilePath = "/var/www/html/gingerberry/tmp_frames/";
 
         $tsArray = array();
 
@@ -113,7 +116,8 @@ class VideoHandler extends Handler
             $time += $step;
             $frame = $frameRate * $time;
             $file = $frameFilePath . ($time / $step) . ".png";
-            shell_exec("ffmpeg -i $filePath -vf 'select=eq(n\, $frame)' -vframes 1 $file <<< y");
+            
+            shell_exec("ffmpeg -i $filePath -vf 'select=eq(n\, $frame)' -y -vframes 1 $file");
 
             $qrcode = new QrReader($file);
             $curr = intval($qrcode->text());
