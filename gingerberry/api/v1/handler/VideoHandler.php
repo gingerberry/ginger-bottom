@@ -98,7 +98,7 @@ class VideoHandler extends Handler
 
         $videoLen = shell_exec("ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath 2> /dev/null");
         $videoLen = intval($videoLen);
-        $frameFilePath = "/tmp/tmp_frames/";
+        $frameFilePath = "/tmp/";
 
         $tsArray = array();
 
@@ -124,6 +124,8 @@ class VideoHandler extends Handler
                 }
                 $prev = $curr;
             }
+
+            shell_exec("rm $file");
         }
 
         return $tsArray;
