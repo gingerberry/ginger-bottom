@@ -132,6 +132,8 @@ class VideoHandler extends Handler
             shell_exec("rm $file");
         }
 
+        rmdir($frameFilePath);
+
         return $tsArray;
     }
 
