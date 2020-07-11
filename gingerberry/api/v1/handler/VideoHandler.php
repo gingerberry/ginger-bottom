@@ -32,28 +32,39 @@ class VideoHandler extends Handler
             header("Content-Type: application/json; charset=UTF-8");
 
             $id = basename($_SERVER['REQUEST_URI']);
-            $target_dir = "presentation/$id/";
             $fileType = strtolower(pathinfo($_FILES["video"]["name"], PATHINFO_EXTENSION));
-            $target_file = $target_dir . $id . ".$fileType";
+            
             if ($fileType != "mp4") {
                 return \json_encode("Invalid file format. Expected .mp4 but received $fileType.");
             }
 
-            $s3 = new S3Client([
-                'version' => 'latest',
-                'region'  => 'us-east-1'
-            ]);
+            if (Config::S3_BUCKET_NAME !== "") {
+                $targetDir = "presentation/$id/";
+                $targetFile = $targetDir . $id . ".$fileType";
 
-            try {
-                $s3->putObject([
-                    'Bucket' => "gingerberry",
-                    'Key'    => $target_file,
-                    'Body'   => file_get_contents($_FILES["video"]["tmp_name"]),
-                    'ACL'        => 'public-read'
+                $s3 = new S3Client([
+                    'version' => 'latest',
+                    'region'  => 'us-east-1'
                 ]);
-            } catch (S3Exception $e) {
-                header("{$this->router->getRequest()->serverProtocol} 500 Internal Server Error");
-                return $e->getMessage() . PHP_EOL;
+
+                try {
+                    $s3->putObject([
+                        'Bucket' => "gingerberry",
+                        'Key'    => $targetFile,
+                        'Body'   => file_get_contents($_FILES["video"]["tmp_name"]),
+                        'ACL'        => 'public-read'
+                    ]);
+                } catch (S3Exception $e) {
+                    header("{$this->router->getRequest()->serverProtocol} 500 Internal Server Error");
+                    return $e->getMessage() . PHP_EOL;
+                }
+            } else {
+                $targetDir = Config::LOCAL_STORAGE . "presentation/$id/";
+                // TODO: Handle if missing dir.
+
+                $targetFile = $targetDir . $id . ".$fileType";
+
+                \copy($_FILES["video"]["tmp_name"], $targetFile);
             }
 
             $this->updateSlideStamps($_FILES["video"]["tmp_name"], $id);
