@@ -2,6 +2,8 @@
 
 namespace gingerberry\db;
 
+use gingerberry\Config;
+
 class DB
 {
 	private static $dbConnection;
@@ -9,15 +11,12 @@ class DB
 
 	private function __construct()
 	{
-		$host = 'gingerberry.cwch0ro4xne5.us-east-1.rds.amazonaws.com';
-		$port = '3306';
-		$db = 'gingerberry';
-		$usr = 'admin';
-        $pwd = 'gingerberry';
-		
 		try {
-			self::$dbConnection = new \PDO("mysql:host=$host;port=$port;charset=utf8mb4;dbname=$db;",
-				$usr, $pwd);
+			self::$dbConnection = new \PDO(
+				"mysql:host=" . Config::DB_HOST . ";port=" . Config::DB_PORT . ";charset=utf8mb4;dbname=" . Config::DB_NAME . ";",
+				Config::DB_USR,
+				Config::DB_PWD
+			);
 			self::$dbConnection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		} catch (\PDOException $e) {
 			throw new \Exception("Грешка при свързване с базата от данни: " . $e->getMessage());
@@ -26,7 +25,7 @@ class DB
 
 	public static function getInstance()
 	{
-		if(!self::$instance) {
+		if (!self::$instance) {
 			self::$instance = new DB();
 		}
 

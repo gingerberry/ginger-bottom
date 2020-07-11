@@ -13,3 +13,4 @@ RewriteRule ^ /gingerberry/index.php [L]
 php_value upload_max_filesize 1G
 php_value post_max_size 1G
 php_value memory_limit 1G
+php_value max_execution_time 1000

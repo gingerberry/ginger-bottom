@@ -5,6 +5,7 @@ namespace gingerberry\api\v1\handler;
 use gingerberry\router\Router;
 use gingerberry\api\v1\handler\Handler;
 use gingerberry\db\DB;
+use gingerberry\Config;
 
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
@@ -63,7 +64,7 @@ class VideoHandler extends Handler
 
     private function updateSlideStamps($filePath, $presentationID)
     {
-        $videoStamps = $this->videoStamping($filePath);
+        $videoStamps = $this->videoStamping($filePath, $presentationID);
 
         $dbConn = DB::getInstance()::getPDO();
         $sql = "SELECT id FROM slides WHERE presentation_id = :presentation_id";
@@ -93,15 +94,14 @@ class VideoHandler extends Handler
         $stmt = null;
     }
 
-    private function videoStamping($filePath)
+    private function videoStamping($filePath, $presentationID)
     {
-        set_time_limit(1000);
-        $frameRate = shell_exec("(ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate $filePath 2> /dev/null | cut -d '/' -f 1)");
+        $frameRate = shell_exec("(" . Config::FFPROBE . " -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate $filePath 2> /dev/null | cut -d '/' -f 1)");
         $frameRate = intval($frameRate);
 
-        $videoLen = shell_exec("ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath 2> /dev/null");
+        $videoLen = shell_exec(Config::FFPROBE . " -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath 2> /dev/null");
         $videoLen = intval($videoLen);
-        $frameFilePath = "/var/www/html/gingerberry/tmp_frames/";
+        $frameFilePath = $this->getTmpFramesDir($presentationID);
 
         $tsArray = array();
 
@@ -116,8 +116,8 @@ class VideoHandler extends Handler
             $time += $step;
             $frame = $frameRate * $time;
             $file = $frameFilePath . ($time / $step) . ".png";
-            
-            shell_exec("ffmpeg -i $filePath -vf 'select=eq(n\, $frame)' -y -vframes 1 $file");
+
+            shell_exec(Config::FFMPEG . " -i $filePath -vf 'select=eq(n\, $frame)' -y -vframes 1 $file");
 
             $qrcode = new QrReader($file);
             $curr = intval($qrcode->text());
@@ -133,5 +133,16 @@ class VideoHandler extends Handler
         }
 
         return $tsArray;
+    }
+
+    private function getTmpFramesDir($presentationID)
+    {
+        $frameFilePath = sys_get_temp_dir() . "/tmp_frames/" . $presentationID . "/";
+
+        if (!\file_exists($frameFilePath)) {
+            \mkdir($frameFilePath, 0755, true);
+        }
+
+        return $frameFilePath;
     }
 }
