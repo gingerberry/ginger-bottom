@@ -107,10 +107,10 @@ class VideoHandler extends Handler
 
     private function videoStamping($filePath, $presentationID)
     {
-        $frameRate = shell_exec("(" . Config::FFPROBE . " -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate $filePath 2> /dev/null | cut -d '/' -f 1)");
+        $frameRate = exec("(" . Config::FFPROBE . " -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate $filePath 2> /dev/null | cut -d '/' -f 1)");
         $frameRate = intval($frameRate);
 
-        $videoLen = shell_exec(Config::FFPROBE . " -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath 2> /dev/null");
+        $videoLen = exec(Config::FFPROBE . " -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath 2> /dev/null");
         $videoLen = intval($videoLen);
         $frameFilePath = $this->getTmpFramesDir($presentationID);
 
@@ -128,7 +128,7 @@ class VideoHandler extends Handler
             $frame = $frameRate * $time;
             $file = $frameFilePath . ($time / $step) . ".png";
 
-            shell_exec(Config::FFMPEG . " -i $filePath -vf 'select=eq(n\, $frame)' -y -vframes 1 $file");
+            exec(Config::FFMPEG . " -i $filePath -vf 'select=eq(n\, $frame)' -y -vframes 1 $file");
 
             $qrcode = new QrReader($file);
             $curr = intval($qrcode->text());
@@ -140,7 +140,7 @@ class VideoHandler extends Handler
                 $prev = $curr;
             }
 
-            shell_exec("rm $file");
+            exec("rm $file");
         }
 
         rmdir($frameFilePath);
