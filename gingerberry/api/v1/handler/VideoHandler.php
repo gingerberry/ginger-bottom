@@ -59,7 +59,7 @@ class VideoHandler extends Handler
                     return $e->getMessage() . PHP_EOL;
                 }
             } else {
-                $targetDir = Config::LOCAL_STORAGE . "presentation/$id/";
+                $targetDir = Config::LOCAL_STORAGE . "presentation" . DIRECTORY_SEPARATOR . "$id" . DIRECTORY_SEPARATOR;
                 // TODO: Handle if missing dir.
 
                 $targetFile = $targetDir . $id . ".$fileType";
@@ -150,7 +150,7 @@ class VideoHandler extends Handler
 
     private function getTmpFramesDir($presentationID)
     {
-        $frameFilePath = sys_get_temp_dir() . "/tmp_frames/" . $presentationID . "/";
+        $frameFilePath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . "tmp_frames" . DIRECTORY_SEPARATOR . $presentationID . DIRECTORY_SEPARATOR;
 
         if (!\file_exists($frameFilePath)) {
             \mkdir($frameFilePath, 0755, true);
